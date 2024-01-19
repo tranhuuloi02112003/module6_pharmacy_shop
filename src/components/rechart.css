@@ -1,0 +1,126 @@
+
+    legend{
+        all: revert;
+    }
+    fieldset{
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    .form-group {
+        display: flex;
+        /*justify-content: space-between;*/
+    }
+    .form-group div:last-child {
+        margin-right: 0;
+    }
+    .form-group div {
+        margin-right: 140px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .report{
+        display: flex;
+    }
+    .report .debt{
+        margin: auto 150px;
+    }
+    .report .list{
+        margin: auto 150px;
+    }
+    .action{
+        display: flex;
+        justify-content: space-between;
+    }
+    .action .chart{
+        margin-right: 660px;
+        margin-left: 20px;
+    }
+    .detail-report {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .revenue,
+    .profit {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-right: 20px;
+    }
+    .revenue input,
+    .profit input {
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        width: 171px;
+    }
+
+    .revenue label,
+    .profit label {
+        margin-bottom: 5px;
+        width: 100%;
+    }
+
+    label, select {
+        margin-right: 5px;
+    }
+
+    select {
+        padding: 3px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+
+    #displayTime {
+        margin-top: 10px;
+    }
+    .time-selector {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #fieldset-time{
+        height: 170px;
+        display: flex;
+        flex-direction: column;  /* Hiển thị các thành phần theo chiều dọc */
+        align-items: flex-start;  /* Canh trái các thành phần trong #fieldset-time */
+        gap: 10px;
+        position: relative;
+    }
+    #fieldset-repot{
+        height: 230px;
+    }
+
+    #fieldset-chart{
+        height: 420px;
+    }
+    #timeValue,#yearValue{
+        display: none;
+    }
+    .col-4{
+        margin-top: 25px;
+    }
+    .col-6{
+        margin-top: 25px;
+    }
+    .button-view-chart {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        display: inline-block;
+        padding: 3px 7px;
+        font-size: 14px;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        border: 2px solid #123456;
+        color: white;
+        background-color: #123456;
+        border-radius: 5px;
+        transition: background-color 0.3s, color 0.3s;
+        height: 30px;
+        line-height: 24px;
+    }
+

@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-} from 'recharts';
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import Select from 'react-select';
+import {format, addDays, lastDayOfMonth, startOfWeek, endOfWeek} from 'date-fns';
+import 'react-toastify/dist/ReactToastify.css';
+import {toast, ToastContainer} from "react-toastify";
+import './rechart.css';
+// npm run build
 
 const ReChart = () => {
     const [data, setData] = useState([
@@ -25,158 +22,278 @@ const ReChart = () => {
         { month: 'Tháng 11', revenue: 100000, profit: 70000 },
         { month: 'Tháng 12', revenue: 105000, profit: 75000 },
     ]);
+    const [selectedTimeOption, setSelectedTimeOption] = useState(null);
+    const [selectedMonth, setSelectedMonth] = useState(null);
+    const [selectedYear, setSelectedYear] = useState(null);
+    const [showChart, setShowChart] = useState(false);
 
-    const [timeType, setTimeType] = useState('year');
-    const [timeValue, setTimeValue] = useState('');
-    const [yearValue, setYearValue] = useState(new Date().getFullYear());
+    //Weekkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
 
-    const changeTimeType = () => {
-        const timeType = document.getElementById('timeType').value;
+    const [selectedWeek, setSelectedWeek] = useState(null);
+    const [weekOptions, setWeekOptions] = useState([]);
+    const [weekStartDate, setWeekStartDate] = useState(null);
+    const [weekEndDate, setWeekEndDate] = useState(null);
 
-        setTimeType(timeType);
+    const handleWeekChange = (selectedWeek) => {
+        setSelectedWeek(selectedWeek);
 
-        const timeValue = document.getElementById('timeValue');
-        const yearValue = document.getElementById('yearValue');
+        if (selectedWeek && selectedYear) {
+            const startOfWeek = new Date(selectedYear.value, 0, 1);
+            startOfWeek.setDate(startOfWeek.getDate() + (selectedWeek.value - 1) * 7 - startOfWeek.getDay());
+            setWeekStartDate(startOfWeek);
 
-        while (timeValue.length > 0) {
-            timeValue.remove(0);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(endOfWeek.getDate() + 6);
+            setWeekEndDate(endOfWeek);
+        }
+    };
+    const calculateWeeksInYear = (year) => {
+        const weeks = [];
+        let currentDate = new Date(year, 0, 1);
+
+        while (currentDate.getFullYear() === year) {
+            weeks.push({ value: weeks.length + 1, label: `Tuần ${weeks.length + 1}` });
+            currentDate.setDate(currentDate.getDate() + 7);
         }
 
-        while (yearValue.length > 0) {
-            yearValue.remove(0);
-        }
+        return weeks;
+    };
+    //Weekkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
 
-        const currentYear = new Date().getFullYear();
+    const timeOptions = [
+        { value: 'year', label: 'Năm' },
+        { value: 'month', label: 'Tháng' },
+        { value: 'week', label: 'Tuần' },
+    ];
 
-        for (let i = currentYear; i >= 1900; i--) {
-            const option = document.createElement('option');
-            option.text = i;
-            yearValue.add(option);
-        }
+    const monthOptions = Array.from({ length: 12 }, (_, i) => ({
+        value: i + 1,
+        label: `Tháng ${i + 1}`,
+    }));
 
-        if (timeType === 'year') {
-            yearValue.style.display = 'inline';
-            timeValue.style.display = 'none';
-        } else if (timeType === 'month' || timeType === 'week') {
-            for (let i = 1; i <= (timeType === 'month' ? 12 : 52); i++) {
-                const option = document.createElement('option');
-                option.text = i;
-                timeValue.add(option);
-            }
-            yearValue.style.display = 'inline';
-            timeValue.style.display = 'inline';
-        }
+    const yearOptions = Array.from({ length: new Date().getFullYear() - 1999 }, (_, i) => ({
+        value: new Date().getFullYear() - i,
+        label: new Date().getFullYear() - i,
+    }));
 
-        displayTime();
+    const handleTimeChange = (selectedOption) => {
+        setSelectedTimeOption(selectedOption);
+        setSelectedMonth(null);
+        setSelectedYear(null);
     };
 
-    const getWeekDates = (year, week) => {
-        const d = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
-        const dayNum = d.getUTCDay() || 7;
-        d.setUTCDate(d.getUTCDate() + 1 - dayNum);
-        const weekStart = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-
-        d.setUTCDate(d.getUTCDate() + 6);
-        const weekEnd = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-
-        return [weekStart, weekEnd];
+    const handleMonthChange = (selectedMonth) => {
+        setSelectedMonth(selectedMonth);
     };
 
+    const handleYearChange = (selectedYear) => {
+        if (selectedTimeOption && selectedTimeOption.value === 'week' && selectedYear) {
+            const weeks = calculateWeeksInYear(selectedYear.value);
+            setWeekOptions(weeks);
+        }
+        setSelectedYear(selectedYear);
+    };
     const displayTime = () => {
-        const timeType = document.getElementById('timeType').value;
-        const timeValue = document.getElementById('timeValue').value;
-        const yearValue = document.getElementById('yearValue').value;
-        const displayTime = document.getElementById('displayTime');
-
-        if (timeType === 'year') {
-            displayTime.innerHTML = `Từ 01/01/${yearValue} đến 31/12/${yearValue}`;
-        } else if (timeType === 'month') {
-            const lastDay = new Date(yearValue, timeValue, 0).getDate();
-            displayTime.innerHTML = `Từ 01/${timeValue}/${yearValue} đến ${lastDay}/${timeValue}/${yearValue}`;
-        } else if (timeType === 'week') {
-            const weekDates = getWeekDates(yearValue, timeValue);
-            const weekStart = `${weekDates[0].getDate()}/${weekDates[0].getMonth() + 1}/${weekDates[0].getFullYear()}`;
-            const weekEnd = `${weekDates[1].getDate()}/${weekDates[1].getMonth() + 1}/${weekDates[1].getFullYear()}`;
-            displayTime.innerHTML = `Từ ${weekStart} đến ${weekEnd}`;
+        if (selectedTimeOption && selectedTimeOption.value === 'year' && selectedYear) {
+            return `Từ 01/01/${selectedYear.value} đến 31/12/${selectedYear.value}`;
+        } else if (selectedTimeOption && selectedTimeOption.value === 'month' && selectedMonth && selectedYear) {
+            const lastDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate();
+            return `Từ 01/${selectedMonth.value}/${selectedYear.value} đến ${lastDay}/${selectedMonth.value}/${selectedYear.value}`;
         }
+        if(weekStartDate && weekEndDate ) {
+            return`Từ ${format(weekStartDate, 'dd/MM/yyyy')} đến ${format(weekEndDate, 'dd/MM/yyyy')}`
+        }
+        return '';
+    };
+
+    const handleViewChart = () => {
+        if (!selectedTimeOption) {
+            toast.warning('Vui lòng chọn đầy đủ thời gian.');
+            return;
+        }
+
+        if (selectedTimeOption.value === 'month' && !selectedMonth) {
+            toast.warning('Vui lòng chọn tháng.');
+            return;
+        }
+        if (selectedTimeOption.value === 'month' && !selectedYear) {
+            toast.warning('Vui lòng chọn năm.');
+            return;
+        }
+        if (selectedTimeOption.value === 'year'  && !selectedYear ) {
+            toast.warning('Vui lòng chọn năm.');
+            return;
+        }
+        if (selectedTimeOption.value === 'week' && (!selectedYear || !selectedWeek )) {
+            toast.warning('Vui lòng chọn tuần hoặc năm');
+            return;
+        }
+
+
+        if (selectedTimeOption && selectedTimeOption.value === 'month' && selectedMonth && selectedYear) {
+            const newData = fetchDataByMonth(selectedMonth, selectedYear);
+            setData(newData);
+        }
+
+        if (selectedTimeOption && selectedTimeOption.value === 'week' && selectedYear && selectedWeek) {
+            const newData = fetchDataByWeek(selectedYear, selectedWeek);
+            setData(newData);
+        }
+        setShowChart(true);
+    };
+
+    const fetchDataByWeek = (selectedYear, selectedWeek) => {
+        const startOfWeekDate = startOfWeek(new Date(selectedYear.value, 0, 1));
+        startOfWeekDate.setDate(startOfWeekDate.getDate() + (selectedWeek.value - 1) * 7);
+
+        const endOfWeekDate = endOfWeek(new Date(startOfWeekDate));
+
+        const newData = Array.from({ length: 7 }, (_, i) => ({
+            date: format(addDays(new Date(startOfWeekDate), i), 'yyyy-MM-dd'),
+            revenue: Math.floor(Math.random() * 100000) + 50000,
+            profit: Math.floor(Math.random() * 50000) + 20000,
+        }));
+
+        return newData;
+    };
+
+    const fetchDataByMonth = (selectedMonth, selectedYear) => {
+        const daysInMonth = lastDayOfMonth(new Date(selectedYear.value, selectedMonth.value - 1)).getDate();
+        const newData = Array.from({ length: daysInMonth }, (_, i) => ({
+            date: format(addDays(new Date(selectedYear.value, selectedMonth.value - 1), i), 'yyyy-MM-dd'),
+            revenue: Math.floor(Math.random() * 100000) + 50000,
+            profit: Math.floor(Math.random() * 50000) + 20000,
+        }));
+        console.log(newData)
+        return newData;
     };
 
     return (
         <>
             <div className="container">
                 <div className="row">
-                    <div className="col-2"></div>
+                    <div className="col-1"></div>
                     <div className="col-4">
                         <div>
-                            <fieldset className="border rounded-3 p-3">
-                                <legend>
-                                    <b>Thời gian</b>
-                                </legend>
-                                <label htmlFor="timeType">Theo</label>
+                            <fieldset className="border rounded-3 p-3" id="fieldset-time">
+                                <legend><b>Thời gian</b></legend>
+                                <div className="time-selector">
+                                    <Select
+                                        value={selectedTimeOption}
+                                        onChange={handleTimeChange}
+                                        options={timeOptions}
+                                        placeholder="Chọn loại thời gian"
+                                    />
+                                    {selectedTimeOption && selectedTimeOption.value === 'year' && (
+                                        <Select
+                                            value={selectedYear}
+                                            onChange={handleYearChange}
+                                            options={yearOptions}
+                                            placeholder="Năm"
+                                        />
+                                    )}
+                                    {(selectedTimeOption && selectedTimeOption.value === 'month') && (
+                                        <>
+                                            <Select
+                                                value={selectedMonth}
+                                                onChange={handleMonthChange}
+                                                options={monthOptions}
+                                                placeholder="Tháng"
+                                            />
 
-                                <select id="timeType" onChange={changeTimeType}>
-                                    <option value="year">Năm</option>
-                                    <option value="month">Tháng</option>
-                                    <option value="week">Tuần</option>
-                                </select>
+                                            <Select
+                                                value={selectedYear}
+                                                onChange={handleYearChange}
+                                                options={yearOptions}
+                                                placeholder="Năm"
+                                            />
+                                        </>
+                                    )}
 
-                                <select id="timeValue"></select>
-
-                                <select id="yearValue"></select>
-
-                                <p id="displayTime"></p>
+                                    {selectedTimeOption && selectedTimeOption.value === 'week' && (
+                                        <>
+                                            <Select
+                                                value={selectedYear}
+                                                onChange={handleYearChange}
+                                                options={yearOptions}
+                                                placeholder="Năm"
+                                            />
+                                            <Select
+                                                value={selectedWeek}
+                                                onChange={handleWeekChange}
+                                                options={weekOptions}
+                                                placeholder="Tuần"
+                                            />
+                                        </>
+                                    )}
+                                </div>
+                                <p>{displayTime()}</p>
+                                <button className="button-view-chart" onClick={handleViewChart}><i
+                                    className="bi bi-bar-chart"> </i> Xem báo cáo và biểu đồ</button>
                             </fieldset>
                         </div>
                         <div>
-                            <fieldset className="border rounded-3 p-3">
-                                <legend>
-                                    <b>Báo cáo chi tiết</b>
-                                </legend>
-                                <div className="detail-report">
-                                    <div className="revenue">
-                                        <label htmlFor="revenue">Doanh thu</label>
-                                        <input type="text" name="" id="revenue" defaultValue="0" />
+                            <fieldset className="border rounded-3 p-3" id="fieldset-repot">
+                                <legend><b>Báo cáo chi tiết</b></legend>
+                                {showChart ? (
+                                    <div className="detail-report">
+                                        <div className="revenue">
+                                            <label htmlFor="revenue">Doanh thu</label>
+                                            <input type="text" name="" id="revenue" defaultValue="400000000" />
+                                        </div>
+                                        <div className="profit">
+                                            <label htmlFor="profit">Lợi nhuận</label>
+                                            <input type="text" name="" id="profit" defaultValue="20000000" />
+                                        </div>
+                                        <div className="revenue">
+                                            <label htmlFor="medium-revenue">Doanh thu TB</label>
+                                            <input type="text" name="" id="medium-revenue" defaultValue="35000000" />
+                                        </div>
+                                        <div className="profit">
+                                            <label htmlFor="medium-profit">Lợi nhuận TB</label>
+                                            <input type="text" name="" id="medium-profit" defaultValue="19000000" />
+                                        </div>
                                     </div>
-                                    <div className="profit">
-                                        <label htmlFor="profit">Lợi nhuận</label>
-                                        <input type="text" name="" id="profit" defaultValue="0" />
-                                    </div>
-                                    <div className="revenue">
-                                        <label htmlFor="medium-revenue">Doanh thu TB</label>
-                                        <input type="text" name="" id="medium-revenue" defaultValue="0" />
-                                    </div>
-                                    <div className="profit">
-                                        <label htmlFor="medium-profit">Lợi nhuận TB</label>
-                                        <input type="text" name="" id="medium-profit" defaultValue="0" />
-                                    </div>
-                                </div>
+                                    ) : (
+                                        <p>Chưa có dữ liệu</p>
+                                    )
+                                }
                             </fieldset>
                         </div>
                     </div>
                     <div className="col-6">
                         <div>
-                            <fieldset className="border rounded-3 p-3">
-                                <legend>
-                                    <b>Biểu đồ Doanh thu và Lợi nhuận</b>
-                                </legend>
-                                <ResponsiveContainer className="chart" height={300}>
-                                    <LineChart width={600} height={300} data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                        <XAxis dataKey="month" />
-                                        <YAxis />
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Line type="monotone" dataKey="revenue" stroke="#8884d8" activeDot={{ r: 8 }} />
-                                        <Line type="monotone" dataKey="profit" stroke="#82ca9d" />
-                                    </LineChart>
-                                </ResponsiveContainer>
+                            <fieldset className="border rounded-3 p-3" id="fieldset-chart">
+                                <legend><b>Biểu đồ Doanh thu và Lợi nhuận</b></legend>
+                                {showChart ? (
+                                    data.length > 0 ? (
+                                        <ResponsiveContainer className="chart" height={300}>
+                                            <LineChart width={600} height={300} data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                                <XAxis dataKey="date" />
+                                                <YAxis />
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <Tooltip />
+                                                <Legend />
+                                                <Line type="monotone" dataKey="revenue" stroke="#8884d8" activeDot={{ r: 8 }} name="Doanh thu"/>
+                                                <Line type="monotone" dataKey="profit" stroke="#82ca9d" name="Lợi nhuận" />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <p>Chưa có dữ liệu</p>
+                                    )
+                                ) : (
+                                    <p>Chưa có dữ liệu</p>
+                                )}
                             </fieldset>
                         </div>
                     </div>
+                    <div className="col-1"></div>
                 </div>
             </div>
+            <ToastContainer />
         </>
     );
+
 };
 
 export default ReChart;
